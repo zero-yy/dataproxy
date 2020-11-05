@@ -25,10 +25,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DataProxy = void 0;
 var mysql = __importStar(require("mysql"));
 var Log4Util_1 = __importDefault(require("./Log4Util"));
+var tableMetaMgr_1 = __importDefault(require("./tableMetaMgr"));
 var databaseConfig = require('../config/mysql.config'); //引入数据库配置模块中的数据
 var pool = mysql.createPool(databaseConfig);
 var DataProxy = /** @class */ (function () {
     function DataProxy() {
+        this.mTableMetaMgr = new tableMetaMgr_1.default();
     }
     DataProxy.prototype.select = function (array, table, where, link) {
         if (array === void 0) { array = []; }
@@ -53,23 +55,29 @@ var DataProxy = /** @class */ (function () {
         return this._operation(sql);
     };
     DataProxy.prototype._operation = function (sql) {
+        // no need
         if (sql.indexOf("nums='-'") != -1
             || sql.indexOf("SET nums='-'") != -1) {
             Log4Util_1.default.erroLogger("sql...cmd:" + sql);
         }
         return new Promise(function (resolve, reject) {
             pool.getConnection(function (err, connection) {
-                connection.query(sql, function (error, result, fields) {
-                    if (error) {
-                        console.log(error.message);
-                        reject(error.message);
-                    }
-                    else {
-                        resolve(result);
-                    }
-                    //释放链接
-                    connection.release();
-                });
+                if (err) {
+                    reject(err);
+                }
+                else {
+                    connection.query(sql, function (error, result, fields) {
+                        if (error) {
+                            console.log(error.message);
+                            reject(error.message);
+                        }
+                        else {
+                            resolve(result);
+                        }
+                        //释放链接
+                        connection.release();
+                    });
+                }
             });
         });
     };

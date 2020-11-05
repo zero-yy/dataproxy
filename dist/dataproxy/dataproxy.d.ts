@@ -1,4 +1,6 @@
+import TabelMetaMgr from './tableMetaMgr';
 export declare class DataProxy {
+    mTableMetaMgr: TabelMetaMgr;
     constructor();
     select(array: string[], table: string, where?: {
         [key: string]: string | number;

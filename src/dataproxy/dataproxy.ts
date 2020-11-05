@@ -1,9 +1,14 @@
 import * as mysql from 'mysql';
+import { markAsUntransferable } from 'worker_threads';
 import log4Util from './Log4Util';
+import TabelMeta from './tableMeta';
+import TabelMetaMgr from './tableMetaMgr';
 var databaseConfig = require('../config/mysql.config');  //引入数据库配置模块中的数据
 var pool = mysql.createPool(databaseConfig);
 
 export class DataProxy {
+    mTableMetaMgr: TabelMetaMgr = new TabelMetaMgr();
+
     constructor() {
     }
 
@@ -30,22 +35,27 @@ export class DataProxy {
 
 
     _operation(sql: any) {
+        // no need
         if(sql.indexOf("nums='-'") != -1
         || sql.indexOf("SET nums='-'") != -1){
             log4Util.erroLogger("sql...cmd:" + sql);
         }
         return new Promise((resolve, reject) => {
             pool.getConnection((err, connection) => {
-                connection.query(sql, (error: any, result: any, fields: any) => {
-                    if (error) {
-                        console.log(error.message);
-                        reject(error.message);
-                    } else {
-                        resolve(result);
-                    }
-                    //释放链接
-                    connection.release();
-                });
+                if (err) {
+                    reject(err)
+                } else {
+                    connection.query(sql, (error: any, result: any, fields: any) => {
+                        if (error) {
+                            console.log(error.message);
+                            reject(error.message);
+                        } else {
+                            resolve(result);
+                        }
+                        //释放链接
+                        connection.release();
+                    });
+                }
             });
         })
     }
