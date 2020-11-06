@@ -1,14 +1,16 @@
-import TabelMetaMgr from './tableMetaMgr';
+declare class keyInfo {
+    pid: number;
+    aid: number;
+}
 export declare class DataProxy {
-    mTableMetaMgr: TabelMetaMgr;
     constructor();
-    select(array: string[], table: string, where?: {
-        [key: string]: string | number;
-    }, link?: 'AND' | 'OR'): Promise<unknown>;
-    _operation(sql: any): Promise<unknown>;
-    _handleWhereString(where: {
-        [key: string]: string | number;
-    }, link?: 'AND' | 'OR'): string;
+    _isValidKey(v: number | undefined): boolean;
+    _mustGetKeyInfo(tableName: string, where: {
+        [key: string]: number;
+    }): keyInfo;
+    get(table: string, where: {
+        [key: string]: number;
+    }): void;
 }
 declare let dataProxy: DataProxy;
 export default dataProxy;

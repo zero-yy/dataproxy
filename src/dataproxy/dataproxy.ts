@@ -1,81 +1,83 @@
+import { table } from 'console';
+import { KeyType } from 'crypto';
 import * as mysql from 'mysql';
 import { markAsUntransferable } from 'worker_threads';
 import log4Util from './Log4Util';
+import mySqlUtil from './MySqlUtil';
 import TabelMeta from './tableMeta';
-import TabelMetaMgr from './tableMetaMgr';
+import tableMetaMgr, { TabelMetaMgr } from './tableMetaMgr';
 var databaseConfig = require('../config/mysql.config');  //引入数据库配置模块中的数据
 var pool = mysql.createPool(databaseConfig);
 
-export class DataProxy {
-    mTableMetaMgr: TabelMetaMgr = new TabelMetaMgr();
+// 无效id
+const InvalidId:number = -1;
 
+// 键信息
+class keyInfo {
+    pid: number = InvalidId;
+    aid: number = InvalidId;
+}
+
+// 缺省join模式
+const DefaultLink:string = 'AND';
+
+export class DataProxy {
     constructor() {
     }
 
+    // 判断key，至少有一个有长度或者是数字
+    _isValidKey(v: number | undefined):boolean {
+        let t = typeof v
+        if (t === "number") {
+            return true
+        }
+        return false
+    }
 
-    select(array: string[] = [], table: string, where?: { [key: string]: string | number }, link: 'AND' | 'OR' = 'AND') {
-        // array = Array
-        // table = String
-        // where = { key: value }
-        // link = 'AND' or 'OR' default 'AND'
-        let sql = "SELECT ";
-        array.forEach(((value, index) => {
-            if (index === 0) {
-                sql += value;
-            } else {
-                sql += ',' + value
+    // where 里的参数只允许是主键或者聚合键。主键优于聚合键
+    // 该函数检测数据不合法时会抛出异常，第一时间报错
+    _mustGetKeyInfo(tableName: string, where: { [key: string]: number }):keyInfo {
+        if (where == null || where.length == 0) {
+            throw new Error(`need where`)
+        }
+
+        if (!tableMetaMgr.hasMeta(tableName)) {
+            throw new Error(`not found table meta [${ tableName }]`)
+        }
+
+        let m = tableMetaMgr.getMeta(tableName)
+
+        // 判断key，至少有一个有长度或者是数字
+        if (!this._isValidKey(where[m.primaryKey]) && !this._isValidKey(where[m.aggregateKey])) {
+            throw new Error(`need valid primaryKey or aggregateKey: [${where}]`)
+        }
+
+        // 判断是否有多余key，不允许有多余key
+        for (let key in where) {
+            if (key != m.primaryKey && key != m.aggregateKey) {
+                throw new Error(`unknown key[${key}] for table [${tableName}]`)
             }
-        }));
-        sql += ' FROM ' + table;
-        if (where) {
-            sql += this._handleWhereString(where, link);
         }
-        return this._operation(sql);
+
+        let ret:keyInfo = new keyInfo();
+        if (this._isValidKey(where[m.primaryKey])) {
+            ret.pid = where[m.primaryKey];
+        }
+        if (this._isValidKey(where[m.aggregateKey])) {
+            ret.aid = where[m.aggregateKey];
+        }
+
+        return ret
     }
 
-
-    _operation(sql: any) {
-        // no need
-        if(sql.indexOf("nums='-'") != -1
-        || sql.indexOf("SET nums='-'") != -1){
-            log4Util.erroLogger("sql...cmd:" + sql);
-        }
-        return new Promise((resolve, reject) => {
-            pool.getConnection((err, connection) => {
-                if (err) {
-                    reject(err)
-                } else {
-                    connection.query(sql, (error: any, result: any, fields: any) => {
-                        if (error) {
-                            console.log(error.message);
-                            reject(error.message);
-                        } else {
-                            resolve(result);
-                        }
-                        //释放链接
-                        connection.release();
-                    });
-                }
-            });
+    // where 里的参数只允许是主键或者聚合键。主键优于聚合键
+    get(table: string, where: { [key: string]: number }) {
+        let keyInfo = this._mustGetKeyInfo(table, where)
+        console.log(keyInfo)
+        // promise
+        mySqlUtil.select(["*"], table, where).then((result: any) => {
+            console.log(result)
         })
-    }
-
-    _handleWhereString(where: { [key: string]: string | number }, link: 'AND' | 'OR' = 'AND') {
-        let str = "";
-        let whereArray: any = [];
-        Object.keys(where).forEach((key) => {
-            //console.log("key",key)
-            whereArray.push(String(key + "=" + mysql.escape(where[key])));
-        });
-        if (link) {
-            let whereStr = whereArray.join(" " + link + " ");
-            str += " WHERE " + whereStr;
-        } else {
-            let whereStr = whereArray.join(" AND ");
-            str += " WHERE " + whereStr;
-        }
-        //console.log("key",str)
-        return str;
     }
 }
 

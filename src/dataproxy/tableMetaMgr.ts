@@ -1,10 +1,22 @@
-import { exit } from "process";
 import TabelMeta from "./tableMeta";
 
-export default class TabelMetaMgr {
-    mDataConfig: Map<string, TabelMeta> = new Map();
+export class TabelMetaMgr {
+    private mDataConfig: Map<string, TabelMeta> = new Map();
 
-    loadConfig(configFileName: string) {
+    hasMeta(name:string):boolean {
+        return this.mDataConfig.has(name)
+    }
+
+    getMeta(name:string): TabelMeta {
+        return this.mDataConfig.get(name)
+    }
+
+    getConfig(): Map<string, TabelMeta> {
+        return this.mDataConfig
+    }
+
+    // 失败时，直接抛出异常
+    mustLoadConfig(configFileName: string) {
         var metas = require(configFileName)
         // console.log(metas)
 
@@ -16,19 +28,23 @@ export default class TabelMetaMgr {
             m.aggregateKey = meta.aggregateKey;
 
             if (m.name == undefined || m.primaryKey == undefined || m.aggregateKey == undefined) {
-                console.error("table meta config err: " + JSON.stringify(m))
-                exit(0)
+                throw new Error("table meta config err: " + JSON.stringify(m))
             }
             if (m.name == null || m.primaryKey == null) {
-                console.error("meta config err")
-                exit(0)
+                throw new Error("meta config err")
             }
 
             //todo 连接数据库，检查表和主键等信息是否正确
 
-            this.mDataConfig[m.name] = m
+            this.mDataConfig.set(m.name, m)
         }, this);
 
+        // map打印有点特殊
+        console.log("TableMetaMgr loaded config:")
         console.log(this.mDataConfig)
     }
 }
+
+// singleton
+let tableMetaMgr: TabelMetaMgr = new TabelMetaMgr();
+export default tableMetaMgr;

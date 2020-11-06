@@ -24,81 +24,70 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DataProxy = void 0;
 var mysql = __importStar(require("mysql"));
-var Log4Util_1 = __importDefault(require("./Log4Util"));
+var MySqlUtil_1 = __importDefault(require("./MySqlUtil"));
 var tableMetaMgr_1 = __importDefault(require("./tableMetaMgr"));
 var databaseConfig = require('../config/mysql.config'); //引入数据库配置模块中的数据
 var pool = mysql.createPool(databaseConfig);
+// 无效id
+var InvalidId = -1;
+// 键信息
+var keyInfo = /** @class */ (function () {
+    function keyInfo() {
+        this.pid = InvalidId;
+        this.aid = InvalidId;
+    }
+    return keyInfo;
+}());
+// 缺省join模式
+var DefaultLink = 'AND';
 var DataProxy = /** @class */ (function () {
     function DataProxy() {
-        this.mTableMetaMgr = new tableMetaMgr_1.default();
     }
-    DataProxy.prototype.select = function (array, table, where, link) {
-        if (array === void 0) { array = []; }
-        if (link === void 0) { link = 'AND'; }
-        // array = Array
-        // table = String
-        // where = { key: value }
-        // link = 'AND' or 'OR' default 'AND'
-        var sql = "SELECT ";
-        array.forEach((function (value, index) {
-            if (index === 0) {
-                sql += value;
-            }
-            else {
-                sql += ',' + value;
-            }
-        }));
-        sql += ' FROM ' + table;
-        if (where) {
-            sql += this._handleWhereString(where, link);
+    // 判断key，至少有一个有长度或者是数字
+    DataProxy.prototype._isValidKey = function (v) {
+        var t = typeof v;
+        if (t === "number") {
+            return true;
         }
-        return this._operation(sql);
+        return false;
     };
-    DataProxy.prototype._operation = function (sql) {
-        // no need
-        if (sql.indexOf("nums='-'") != -1
-            || sql.indexOf("SET nums='-'") != -1) {
-            Log4Util_1.default.erroLogger("sql...cmd:" + sql);
+    // where 里的参数只允许是主键或者聚合键。主键优于聚合键
+    // 该函数检测数据不合法时会抛出异常，第一时间报错
+    DataProxy.prototype._mustGetKeyInfo = function (tableName, where) {
+        if (where == null || where.length == 0) {
+            throw new Error("need where");
         }
-        return new Promise(function (resolve, reject) {
-            pool.getConnection(function (err, connection) {
-                if (err) {
-                    reject(err);
-                }
-                else {
-                    connection.query(sql, function (error, result, fields) {
-                        if (error) {
-                            console.log(error.message);
-                            reject(error.message);
-                        }
-                        else {
-                            resolve(result);
-                        }
-                        //释放链接
-                        connection.release();
-                    });
-                }
-            });
-        });
+        if (!tableMetaMgr_1.default.hasMeta(tableName)) {
+            throw new Error("not found table meta [" + tableName + "]");
+        }
+        var m = tableMetaMgr_1.default.getMeta(tableName);
+        // 判断key，至少有一个有长度或者是数字
+        if (!this._isValidKey(where[m.primaryKey]) && !this._isValidKey(where[m.aggregateKey])) {
+            throw new Error("need valid primaryKey or aggregateKey: [" + where + "]");
+        }
+        // 判断是否有多余key，不允许有多余key
+        for (var key in where) {
+            if (key != m.primaryKey && key != m.aggregateKey) {
+                throw new Error("unknown key[" + key + "] for table [" + tableName + "]");
+            }
+        }
+        var ret = new keyInfo();
+        if (this._isValidKey(where[m.primaryKey])) {
+            ret.pid = where[m.primaryKey];
+        }
+        if (this._isValidKey(where[m.aggregateKey])) {
+            ret.aid = where[m.aggregateKey];
+        }
+        return ret;
     };
-    DataProxy.prototype._handleWhereString = function (where, link) {
-        if (link === void 0) { link = 'AND'; }
-        var str = "";
-        var whereArray = [];
-        Object.keys(where).forEach(function (key) {
-            //console.log("key",key)
-            whereArray.push(String(key + "=" + mysql.escape(where[key])));
+    // where 里的参数只允许是主键或者聚合键。主键优于聚合键
+    DataProxy.prototype.get = function (table, where) {
+        var keyInfo = this._mustGetKeyInfo(table, where);
+        console.log(keyInfo);
+        // promise
+        MySqlUtil_1.default.select(["*"], table, where).then(function (result) {
+            console.log(result);
         });
-        if (link) {
-            var whereStr = whereArray.join(" " + link + " ");
-            str += " WHERE " + whereStr;
-        }
-        else {
-            var whereStr = whereArray.join(" AND ");
-            str += " WHERE " + whereStr;
-        }
-        //console.log("key",str)
-        return str;
     };
     return DataProxy;
 }());

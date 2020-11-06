@@ -1,5 +1,10 @@
 import TabelMeta from "./tableMeta";
-export default class TabelMetaMgr {
-    mDataConfig: Map<string, TabelMeta>;
-    loadConfig(configFileName: string): void;
+export declare class TabelMetaMgr {
+    private mDataConfig;
+    hasMeta(name: string): boolean;
+    getMeta(name: string): TabelMeta;
+    getConfig(): Map<string, TabelMeta>;
+    mustLoadConfig(configFileName: string): void;
 }
+declare let tableMetaMgr: TabelMetaMgr;
+export default tableMetaMgr;
