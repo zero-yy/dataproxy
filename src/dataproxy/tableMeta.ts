@@ -1,5 +1,5 @@
 // 表的元组信息，用于分析主键和副键
-export default class TabelMeta {
+export default class TableMeta {
     // 表名
     name: string = "";
     // 主键

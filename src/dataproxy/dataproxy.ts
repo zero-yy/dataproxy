@@ -4,8 +4,8 @@ import * as mysql from 'mysql';
 import { markAsUntransferable } from 'worker_threads';
 import log4Util from './Log4Util';
 import mySqlUtil from './MySqlUtil';
-import TabelMeta from './tableMeta';
-import tableMetaMgr, { TabelMetaMgr } from './tableMetaMgr';
+import TableMeta from './tableMeta';
+import tableMetaMgr, { TableMetaMgr } from './tableMetaMgr';
 var databaseConfig = require('../config/mysql.config');  //引入数据库配置模块中的数据
 var pool = mysql.createPool(databaseConfig);
 

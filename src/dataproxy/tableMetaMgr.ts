@@ -1,17 +1,17 @@
-import TabelMeta from "./tableMeta";
+import TableMeta from "./tableMeta";
 
-export class TabelMetaMgr {
-    private mDataConfig: Map<string, TabelMeta> = new Map();
+export class TableMetaMgr {
+    private mDataConfig: Map<string, TableMeta> = new Map();
 
     hasMeta(name:string):boolean {
         return this.mDataConfig.has(name)
     }
 
-    getMeta(name:string): TabelMeta {
+    getMeta(name:string): TableMeta {
         return this.mDataConfig.get(name)
     }
 
-    getConfig(): Map<string, TabelMeta> {
+    getConfig(): Map<string, TableMeta> {
         return this.mDataConfig
     }
 
@@ -22,7 +22,7 @@ export class TabelMetaMgr {
 
         // 需要传递this进去
         metas.forEach(function(meta) {
-            let m :TabelMeta = new TabelMeta();
+            let m :TableMeta = new TableMeta();
             m.name = meta.name;
             m.primaryKey = meta.primaryKey;
             m.aggregateKey = meta.aggregateKey;
@@ -46,5 +46,5 @@ export class TabelMetaMgr {
 }
 
 // singleton
-let tableMetaMgr: TabelMetaMgr = new TabelMetaMgr();
+let tableMetaMgr: TableMetaMgr = new TableMetaMgr();
 export default tableMetaMgr;

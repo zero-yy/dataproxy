@@ -3,23 +3,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TabelMetaMgr = void 0;
+exports.TableMetaMgr = void 0;
 var tableMeta_1 = __importDefault(require("./tableMeta"));
-var TabelMetaMgr = /** @class */ (function () {
-    function TabelMetaMgr() {
+var TableMetaMgr = /** @class */ (function () {
+    function TableMetaMgr() {
         this.mDataConfig = new Map();
     }
-    TabelMetaMgr.prototype.hasMeta = function (name) {
+    TableMetaMgr.prototype.hasMeta = function (name) {
         return this.mDataConfig.has(name);
     };
-    TabelMetaMgr.prototype.getMeta = function (name) {
+    TableMetaMgr.prototype.getMeta = function (name) {
         return this.mDataConfig.get(name);
     };
-    TabelMetaMgr.prototype.getConfig = function () {
+    TableMetaMgr.prototype.getConfig = function () {
         return this.mDataConfig;
     };
     // 失败时，直接抛出异常
-    TabelMetaMgr.prototype.mustLoadConfig = function (configFileName) {
+    TableMetaMgr.prototype.mustLoadConfig = function (configFileName) {
         var metas = require(configFileName);
         // console.log(metas)
         // 需要传递this进去
@@ -38,12 +38,12 @@ var TabelMetaMgr = /** @class */ (function () {
             this.mDataConfig.set(m.name, m);
         }, this);
         // map打印有点特殊
-        console.log("TableMetaMgr loaded config:\n ");
+        console.log("TableMetaMgr loaded config:");
         console.log(this.mDataConfig);
     };
-    return TabelMetaMgr;
+    return TableMetaMgr;
 }());
-exports.TabelMetaMgr = TabelMetaMgr;
+exports.TableMetaMgr = TableMetaMgr;
 // singleton
-var tableMetaMgr = new TabelMetaMgr();
+var tableMetaMgr = new TableMetaMgr();
 exports.default = tableMetaMgr;

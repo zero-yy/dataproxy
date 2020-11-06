@@ -1,4 +1,4 @@
-export default class TabelMeta {
+export default class TableMeta {
     name: string;
     primaryKey: string;
     aggregateKey: string;
