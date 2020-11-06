@@ -2,7 +2,7 @@
     {
         "name": "test",
         "primaryKey": "id",
-        "aggregateKey": ""
+        "aggregateKey": "userId"
     },
     {
         "name": "test2",

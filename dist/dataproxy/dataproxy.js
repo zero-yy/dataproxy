@@ -58,17 +58,20 @@ var DataProxy = /** @class */ (function () {
             throw new Error("need where");
         }
         if (!tableMetaMgr_1.default.hasMeta(tableName)) {
-            throw new Error("not found table meta [" + tableName + "]");
+            var e = "not found table meta [" + tableName + "]";
+            throw new Error(e);
         }
         var m = tableMetaMgr_1.default.getMeta(tableName);
         // 判断key，至少有一个有长度或者是数字
         if (!this._isValidKey(where[m.primaryKey]) && !this._isValidKey(where[m.aggregateKey])) {
-            throw new Error("need valid primaryKey or aggregateKey: [" + where + "]");
+            var e = "need valid primaryKey or aggregateKey: [" + JSON.stringify(where) + "]";
+            throw new Error(e);
         }
         // 判断是否有多余key，不允许有多余key
         for (var key in where) {
             if (key != m.primaryKey && key != m.aggregateKey) {
-                throw new Error("unknown key[" + key + "] for table [" + tableName + "]");
+                var e = "unknown key[" + key + "] for table [" + tableName + "]";
+                throw new Error(e);
             }
         }
         var ret = new keyInfo();

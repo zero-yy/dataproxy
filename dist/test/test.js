@@ -8,6 +8,8 @@ var dataProxy_1 = __importDefault(require("../dataProxy/dataProxy"));
 var tableMetaMgr_1 = __importDefault(require("../dataProxy/tableMetaMgr"));
 tableMetaMgr_1.default.mustLoadConfig("../../tableMetaConfig.json");
 dataProxy_1.default.get("test", { "id": 18 });
+dataProxy_1.default.get("test2", { "id": 1, "userId": 1 });
+dataProxy_1.default.get("test2", { "id": 2, "userId": 1 });
 // dataProxy.select(["*"], "test", {"id": 18}).then((result: any) => {
 //     console.log(result)
 // })
