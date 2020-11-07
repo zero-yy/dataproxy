@@ -1,7 +1,9 @@
 import * as redis from 'redis';
 export declare class RedisUtil {
     constructor();
+    setex(key: string, seconds: number, value: any): void;
     set(key: string, value: any, cb?: redis.Callback<'OK'>): void;
+    getObjectWithPromise(key: string): Promise<object | null>;
     get(key: string, cb: any): void;
     setHmset(key: string, value: any): void;
     getHget(key: string, cb: any): void;

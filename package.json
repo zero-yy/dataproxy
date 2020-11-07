@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@types/mysql": "^2.15.15",
-    "@types/redis": "^2.8.28"
+    "@types/redis": "^2.8.28",
+    "prettier": "2.1.2"
   }
 }

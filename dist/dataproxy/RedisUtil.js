@@ -23,15 +23,20 @@ exports.RedisUtil = void 0;
 var redis = __importStar(require("redis"));
 var databaseConfig = require('../config/redis.config'); //引入数据库配置模块中的数据
 var client = redis.createClient(databaseConfig);
+// YY
+// TODO: 需要redis状态，，告知上层
+// 上层统一拦截，，如果redis连接不ok，则终端玩家本次操作
+// db也如此处理
 client.on('error', function (err) {
-    //console.error(`Error: ${err}`);
+    console.error("Error: " + err);
 });
 client.on('ready', function (res) {
-    //console.info('Redis connect ready');
+    console.info('Redis connect ready');
 });
 client.on('connect', function () {
-    //console.log('Redis connected!');
+    console.log('Redis connected!');
 });
+var DefaultExpireTtl = 7 * 24 * 3600;
 var RedisUtil = /** @class */ (function () {
     function RedisUtil() {
         this.hSetKey = function (key, value) {
@@ -53,9 +58,29 @@ var RedisUtil = /** @class */ (function () {
             });
         };
     }
+    // ttl： timeout seconds
+    RedisUtil.prototype.setex = function (key, seconds, value) {
+        value = JSON.stringify(value);
+        client.setex(key, seconds, value);
+    };
     RedisUtil.prototype.set = function (key, value, cb) {
         value = JSON.stringify(value);
         client.set(key, value);
+    };
+    //@return: null or obj
+    //!never reject
+    RedisUtil.prototype.getObjectWithPromise = function (key) {
+        return new Promise(function (resolve, reject) {
+            client.get(key, function (err, replay) {
+                if (err) {
+                    resolve(null);
+                }
+                else {
+                    var obj = JSON.parse(replay);
+                    resolve(obj);
+                }
+            });
+        });
     };
     RedisUtil.prototype.get = function (key, cb) {
         client.get(key, function (err, replay) {
@@ -90,8 +115,9 @@ var RedisUtil = /** @class */ (function () {
     };
     /**向redis末尾插入整个数组，其数组中为多条string类型的json数据 */
     RedisUtil.prototype.rpushListArry = function (listKey, list) {
+        //添加整个数组
         for (var i = 0; i < list.length; i++) {
-            if ((typeof list[i]) === "object") {
+            if (typeof list[i] === 'object') {
                 list[i] = JSON.stringify(list[i]);
             }
         }
@@ -126,6 +152,7 @@ var RedisUtil = /** @class */ (function () {
     };
     /**向表末尾插入单条数据 */
     RedisUtil.prototype.rpushListOne = function (listKey, value, cb) {
+        //添加单个数据
         value = JSON.stringify(value);
         client.rpush(listKey, value, function (err, replay) {
             if (err) {
@@ -202,7 +229,7 @@ var RedisUtil = /** @class */ (function () {
         value = JSON.stringify(value);
         if (index === 0) {
             client.lindex(listKey, index, function (err, result) {
-                client.linsert(listKey, "BEFORE", result, value, function (err, replay) {
+                client.linsert(listKey, 'BEFORE', result, value, function (err, replay) {
                     if (err) {
                         cb(err, null);
                     }
@@ -214,7 +241,7 @@ var RedisUtil = /** @class */ (function () {
         }
         else {
             client.lindex(listKey, index - 1, function (err, result) {
-                client.linsert(listKey, "AFTER", result, value, function (err, replay) {
+                client.linsert(listKey, 'AFTER', result, value, function (err, replay) {
                     if (err) {
                         cb(err, null);
                     }

@@ -1,29 +1,55 @@
+import { resourceUsage } from 'process';
 import * as redis from 'redis';
 import log4Util from './Log4Util';
-var databaseConfig = require('../config/redis.config');  //引入数据库配置模块中的数据
+var databaseConfig = require('../config/redis.config'); //引入数据库配置模块中的数据
 
 const client = redis.createClient(databaseConfig);
 
-client.on('error', err => {
-    //console.error(`Error: ${err}`);
+// YY
+// TODO: 需要redis状态，，告知上层
+// 上层统一拦截，，如果redis连接不ok，则终端玩家本次操作
+// db也如此处理
+client.on('error', (err) => {
+    console.error(`Error: ${err}`);
 });
 
-client.on('ready', res => {
-    //console.info('Redis connect ready');
+client.on('ready', (res) => {
+    console.info('Redis connect ready');
 });
 
 client.on('connect', () => {
-    //console.log('Redis connected!');
+    console.log('Redis connected!');
 });
 
-export class RedisUtil {
+const DefaultExpireTtl: number = 7 * 24 * 3600;
 
-    constructor() {
+export class RedisUtil {
+    constructor() {}
+
+    // ttl： timeout seconds
+    setex(key: string, seconds: number, value: any) {
+        value = JSON.stringify(value);
+        client.setex(key, seconds, value);
     }
 
     set(key: string, value: any, cb?: redis.Callback<'OK'>) {
         value = JSON.stringify(value);
         client.set(key, value);
+    }
+
+    //@return: null or obj
+    //!never reject
+    getObjectWithPromise(key: string): Promise<object | null> {
+        return new Promise<object | null>((resolve, reject) => {
+            client.get(key, function (err, replay) {
+                if (err) {
+                    resolve(null);
+                } else {
+                    let obj: object = JSON.parse(replay);
+                    resolve(obj as object);
+                }
+            });
+        });
     }
 
     get(key: string, cb: any) {
@@ -44,7 +70,7 @@ export class RedisUtil {
     getHget(key: string, cb: any) {
         client.hmget(key, function (err, replay) {
             cb(null, replay);
-        })
+        });
     }
 
     hSetKey = (key: any, value: any) => {
@@ -65,7 +91,6 @@ export class RedisUtil {
         });
     };
 
-
     //----列表
     /**获取指定键列表长度 */
     listSize(listKey: any, cb: any) {
@@ -79,9 +104,10 @@ export class RedisUtil {
     }
 
     /**向redis末尾插入整个数组，其数组中为多条string类型的json数据 */
-    rpushListArry(listKey: any, list: any) {//添加整个数组
+    rpushListArry(listKey: any, list: any) {
+        //添加整个数组
         for (let i = 0; i < list.length; i++) {
-            if ((typeof list[i]) === "object") {
+            if (typeof list[i] === 'object') {
                 list[i] = JSON.stringify(list[i]);
             }
         }
@@ -117,15 +143,16 @@ export class RedisUtil {
     }
 
     /**向表末尾插入单条数据 */
-    rpushListOne(listKey: any, value: any, cb?: any) {//添加单个数据
+    rpushListOne(listKey: any, value: any, cb?: any) {
+        //添加单个数据
         value = JSON.stringify(value);
         client.rpush(listKey, value, function (err, replay) {
             if (err) {
-                if(cb){
+                if (cb) {
                     cb(err, null);
                 }
             } else {
-                if(cb){
+                if (cb) {
                     cb(err, replay);
                 }
             }
@@ -185,7 +212,7 @@ export class RedisUtil {
                     cb(null, data);
                 }
             }
-        })
+        });
     }
 
     /**向指定位置插入元素 */
@@ -194,25 +221,24 @@ export class RedisUtil {
         value = JSON.stringify(value);
         if (index === 0) {
             client.lindex(listKey, index, function (err, result) {
-                client.linsert(listKey, "BEFORE", result, value, function (err, replay) {
+                client.linsert(listKey, 'BEFORE', result, value, function (err, replay) {
                     if (err) {
                         cb(err, null);
                     } else {
                         cb(null, replay);
                     }
-                })
+                });
             });
         } else {
             client.lindex(listKey, index - 1, function (err, result) {
-                client.linsert(listKey, "AFTER", result, value, function (err, replay) {
+                client.linsert(listKey, 'AFTER', result, value, function (err, replay) {
                     if (err) {
                         cb(err, null);
                     } else {
                         cb(null, replay);
                     }
-                })
+                });
             });
-
         }
     }
 
@@ -244,7 +270,7 @@ export class RedisUtil {
     }
 
     /**
-     * 删除指定内容从0到-1就是一个不删      
+     * 删除指定内容从0到-1就是一个不删
      * 从-1到0就是数据全部删除,相当于del key
      */
     deletelistdata(key: string) {
@@ -263,25 +289,25 @@ export class RedisUtil {
             } else {
                 cb(null, replies);
             }
-        })
+        });
     }
 
     /**是否有某个值 */
     hasKey(key: string, cb: (count: number) => void) {
         client.exists(key, function (err, val) {
-            if(cb){
+            if (cb) {
                 cb(val);
             }
-        })
+        });
     }
 
     /**设置过期时间s */
-    setKeyTimeout(key: string, time: number,cb?: any) {
+    setKeyTimeout(key: string, time: number, cb?: any) {
         client.expire(key, time, function (err, val) {
-            if(cb){
+            if (cb) {
                 cb(val);
             }
-        })
+        });
     }
 
     /**删除指定键 */
@@ -289,18 +315,17 @@ export class RedisUtil {
         client.del(key, function (err, data) {
             if (cb) {
                 if (err) {
-                    if(cb){
+                    if (cb) {
                         cb(err, null);
                     }
                 } else {
-                    if(cb){
+                    if (cb) {
                         cb(null, data);
                     }
                 }
             }
-        })
+        });
     }
-
 }
 let redisUtil = new RedisUtil();
 export default redisUtil;

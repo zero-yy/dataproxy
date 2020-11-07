@@ -15,6 +15,22 @@ var TableMetaMgr = /** @class */ (function () {
     TableMetaMgr.prototype.getMeta = function (name) {
         return this.mDataConfig.get(name);
     };
+    // 没找到则返回""
+    TableMetaMgr.prototype.getPidKey = function (table) {
+        var m = this.getMeta(table);
+        if (m == undefined) {
+            return "";
+        }
+        return m.primaryKey;
+    };
+    // 没找到则返回""
+    TableMetaMgr.prototype.getAidKey = function (table) {
+        var m = this.getMeta(table);
+        if (m == undefined) {
+            return "";
+        }
+        return m.aggregateKey;
+    };
     TableMetaMgr.prototype.getConfig = function () {
         return this.mDataConfig;
     };

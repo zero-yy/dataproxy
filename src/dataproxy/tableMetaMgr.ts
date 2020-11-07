@@ -11,6 +11,24 @@ export class TableMetaMgr {
         return this.mDataConfig.get(name)
     }
 
+    // 没找到则返回""
+    getPidKey(table: string): string {
+        let m = this.getMeta(table)
+        if (m == undefined) {
+            return ""
+        }
+        return m.primaryKey;
+    }
+
+    // 没找到则返回""
+    getAidKey(table: string): string {
+        let m = this.getMeta(table)
+        if (m == undefined) {
+            return ""
+        }
+        return m.aggregateKey
+    }
+
     getConfig(): Map<string, TableMeta> {
         return this.mDataConfig
     }
